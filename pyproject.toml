@@ -17,4 +17,27 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "httpx>=0.27.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",                        # Verbose output
+    "--tb=short",                # Shorter traceback format
+    "--strict-markers",          # Strict marker validation
+    "-ra",                       # Show extra test summary info for all except passed
+    "--color=yes",               # Force colored output
+]
+markers = [
+    "integration: marks tests as integration tests requiring real API (deselect with '-m \"not integration\"')",
+    "slow: marks tests as slow running",
+    "api: marks tests as API endpoint tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore:resource_tracker:UserWarning",
 ]
