@@ -241,8 +241,56 @@ header h1 {
 }
 
 .sources-content {
-    padding: 0 0.5rem 0.25rem 1.5rem;
+    padding: 0.5rem 0.5rem 0.5rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Source badge styling */
+.source-badge {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--primary-color);
+    border-radius: 16px;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.source-badge:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.source-badge:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.source-badge:active {
+    transform: translateY(0);
+}
+
+/* Non-link badge styling */
+.source-badge-no-link {
+    border-color: var(--border-color);
     color: var(--text-secondary);
+    cursor: default;
+}
+
+.source-badge-no-link:hover {
+    background: var(--surface);
+    color: var(--text-secondary);
+    transform: none;
+    box-shadow: none;
 }
 
 /* Markdown formatting styles */
@@ -599,6 +647,31 @@ details[open] .suggested-header::before {
     color: var(--text-secondary);
     font-style: italic;
     text-transform: none;
+}
+
+/* New Chat Button in Sidebar */
+.new-chat-button {
+    width: 100%;
+    padding: 0.5rem 0;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    text-align: left;
+}
+
+.new-chat-button:focus {
+    outline: none;
+    color: var(--primary-color);
+}
+
+.new-chat-button:hover {
+    color: var(--primary-color);
 }
 
 /* Suggested Questions in Sidebar */

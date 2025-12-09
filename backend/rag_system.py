@@ -4,8 +4,8 @@ from document_processor import DocumentProcessor
 from vector_store import VectorStore
 from ai_generator import AIGenerator
 from session_manager import SessionManager
-from search_tools import ToolManager, CourseSearchTool
-from models import Course, Lesson, CourseChunk
+from search_tools import ToolManager, CourseSearchTool, CourseOutlineTool
+from models import Course, Lesson, CourseChunk, Source
 
 class RAGSystem:
     """Main orchestrator for the Retrieval-Augmented Generation system"""
@@ -23,6 +23,10 @@ class RAGSystem:
         self.tool_manager = ToolManager()
         self.search_tool = CourseSearchTool(self.vector_store)
         self.tool_manager.register_tool(self.search_tool)
+
+        # Initialize course outline tool
+        self.outline_tool = CourseOutlineTool(self.vector_store)
+        self.tool_manager.register_tool(self.outline_tool)
     
     def add_course_document(self, file_path: str) -> Tuple[Course, int]:
         """
@@ -99,25 +103,25 @@ class RAGSystem:
         
         return total_courses, total_chunks
     
-    def query(self, query: str, session_id: Optional[str] = None) -> Tuple[str, List[str]]:
+    def query(self, query: str, session_id: Optional[str] = None) -> Tuple[str, List[Source]]:
         """
         Process a user query using the RAG system with tool-based search.
-        
+
         Args:
             query: User's question
             session_id: Optional session ID for conversation context
-            
+
         Returns:
-            Tuple of (response, sources list - empty for tool-based approach)
+            Tuple of (response, sources list with clickable links)
         """
         # Create prompt for the AI with clear instructions
         prompt = f"""Answer this question about course materials: {query}"""
-        
+
         # Get conversation history if session exists
         history = None
         if session_id:
             history = self.session_manager.get_conversation_history(session_id)
-        
+
         # Generate response using AI with tools
         response = self.ai_generator.generate_response(
             query=prompt,
@@ -125,18 +129,21 @@ class RAGSystem:
             tools=self.tool_manager.get_tool_definitions(),
             tool_manager=self.tool_manager
         )
-        
-        # Get sources from the search tool
-        sources = self.tool_manager.get_last_sources()
+
+        # Get sources from the search tool (now dict objects with text and link)
+        sources_data = self.tool_manager.get_last_sources()
 
         # Reset sources after retrieving them
         self.tool_manager.reset_sources()
-        
+
+        # Convert source dicts to Source objects
+        sources = [Source(text=s["text"], link=s.get("link")) for s in sources_data]
+
         # Update conversation history
         if session_id:
             self.session_manager.add_exchange(session_id, query, response)
-        
-        # Return response with sources from tool searches
+
+        # Return response with Source objects containing clickable links
         return response, sources
     
     def get_course_analytics(self) -> Dict:

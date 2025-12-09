@@ -106,13 +106,21 @@ class VectorStore:
                 query_texts=[course_name],
                 n_results=1
             )
-            
-            if results['documents'][0] and results['metadatas'][0]:
-                # Return the title (which is now the ID)
-                return results['metadatas'][0][0]['title']
+
+            if results['documents'][0] and results['metadatas'][0] and results['distances'][0]:
+                # Check similarity threshold (lower distance = better match)
+                # ChromaDB cosine distance: 0.0 = perfect match, higher = worse match
+                # Based on testing: valid matches < 1.7, invalid matches > 1.7
+                distance = results['distances'][0][0]
+                SIMILARITY_THRESHOLD = 1.7
+
+                if distance < SIMILARITY_THRESHOLD:
+                    return results['metadatas'][0][0]['title']
+                else:
+                    print(f"Course name '{course_name}' similarity too low (distance: {distance:.3f})")
         except Exception as e:
             print(f"Error resolving course name: {e}")
-        
+
         return None
     
     def _build_filter(self, course_title: Optional[str], lesson_number: Optional[int]) -> Optional[Dict]:
