@@ -1,10 +1,10 @@
 """Tests for rag_system.py - RAGSystem integration tests"""
+
+from unittest.mock import MagicMock
+
 import pytest
-import os
-from unittest.mock import MagicMock, patch
-from rag_system import RAGSystem
-from config import Config
 from models import Source
+from rag_system import RAGSystem
 
 
 class TestRAGSystemInitialization:
@@ -42,7 +42,8 @@ class TestRAGSystemDocumentProcessing:
 
         # Create a test document
         test_doc = tmp_path / "test_course.txt"
-        test_doc.write_text("""Course Title: Test Course
+        test_doc.write_text(
+            """Course Title: Test Course
 Course Link: https://example.com/course
 Course Instructor: Test Instructor
 
@@ -53,7 +54,8 @@ This is the introduction lesson content.
 Lesson 1: Advanced Topics
 Lesson Link: https://example.com/lesson-1
 This is the advanced topics content.
-""")
+"""
+        )
 
         course, num_chunks = rag_system.add_course_document(str(test_doc))
 
@@ -92,10 +94,10 @@ class TestRAGSystemQueryWithMocks:
 
         response, sources = rag_system.query("What is testing?")
 
-        print(f"\n--- Query Without Session Response ---")
+        print("\n--- Query Without Session Response ---")
         print(f"Response: {response}")
         print(f"Sources: {sources}")
-        print(f"--- End Response ---\n")
+        print("--- End Response ---\n")
 
         assert response == mock_response
         assert isinstance(sources, list)
@@ -127,9 +129,9 @@ class TestRAGSystemQueryWithMocks:
         assert "conversation_history" in second_call_kwargs
         history = second_call_kwargs["conversation_history"]
         assert history is not None
-        print(f"\n--- Conversation History ---")
+        print("\n--- Conversation History ---")
         print(history)
-        print(f"--- End History ---\n")
+        print("--- End History ---\n")
 
     def test_query_sources_returned(self, test_config, temp_chroma_path, test_vector_store):
         """Test that sources are properly returned"""
@@ -148,17 +150,17 @@ class TestRAGSystemQueryWithMocks:
 
         response, sources = rag_system.query("What is testing?")
 
-        print(f"\n--- Query Sources ---")
+        print("\n--- Query Sources ---")
         print(f"Response: {response}")
         print(f"Sources: {sources}")
-        print(f"--- End Sources ---\n")
+        print("--- End Sources ---\n")
 
         assert isinstance(sources, list)
         # Sources should have been populated by the search
         if len(sources) > 0:
             assert isinstance(sources[0], Source)
-            assert hasattr(sources[0], 'text')
-            assert hasattr(sources[0], 'link')
+            assert hasattr(sources[0], "text")
+            assert hasattr(sources[0], "link")
 
     def test_query_tools_passed_to_ai(self, test_config, temp_chroma_path, test_vector_store):
         """Test that tools are passed to AI generator"""
@@ -191,7 +193,9 @@ class TestRAGSystemIntegration:
     """Integration tests with real components (requires API key)"""
 
     @pytest.mark.integration
-    def test_end_to_end_content_query(self, test_config, temp_chroma_path, sample_course, sample_chunks):
+    def test_end_to_end_content_query(
+        self, test_config, temp_chroma_path, sample_course, sample_chunks
+    ):
         """Test end-to-end query with real AI API"""
         if not test_config.ANTHROPIC_API_KEY or test_config.ANTHROPIC_API_KEY == "test-api-key":
             pytest.skip("Real API key required")
@@ -208,10 +212,10 @@ class TestRAGSystemIntegration:
             "What does the Testing Fundamentals course teach about unit tests?"
         )
 
-        print(f"\n--- End-to-End Content Query ---")
+        print("\n--- End-to-End Content Query ---")
         print(f"Response: {response}")
         print(f"Sources: {sources}")
-        print(f"--- End Query ---\n")
+        print("--- End Query ---\n")
 
         assert isinstance(response, str)
         assert len(response) > 0
@@ -219,7 +223,9 @@ class TestRAGSystemIntegration:
         assert "test" in response.lower() or len(response) > 10
 
     @pytest.mark.integration
-    def test_end_to_end_outline_query(self, test_config, temp_chroma_path, sample_course, sample_chunks):
+    def test_end_to_end_outline_query(
+        self, test_config, temp_chroma_path, sample_course, sample_chunks
+    ):
         """Test end-to-end outline query with real AI API"""
         if not test_config.ANTHROPIC_API_KEY or test_config.ANTHROPIC_API_KEY == "test-api-key":
             pytest.skip("Real API key required")
@@ -236,10 +242,10 @@ class TestRAGSystemIntegration:
             "What is the outline of the Testing Fundamentals course?"
         )
 
-        print(f"\n--- End-to-End Outline Query ---")
+        print("\n--- End-to-End Outline Query ---")
         print(f"Response: {response}")
         print(f"Sources: {sources}")
-        print(f"--- End Query ---\n")
+        print("--- End Query ---\n")
 
         assert isinstance(response, str)
         assert len(response) > 0
@@ -258,10 +264,10 @@ class TestRAGSystemIntegration:
         # Query that shouldn't use tools
         response, sources = rag_system.query("What is 2+2?")
 
-        print(f"\n--- End-to-End General Query ---")
+        print("\n--- End-to-End General Query ---")
         print(f"Response: {response}")
         print(f"Sources: {sources}")
-        print(f"--- End Query ---\n")
+        print("--- End Query ---\n")
 
         assert isinstance(response, str)
         assert len(response) > 0

@@ -1,6 +1,6 @@
 """Tests for search_tools.py - CourseSearchTool and CourseOutlineTool"""
-import pytest
-from search_tools import CourseSearchTool, CourseOutlineTool, ToolManager
+
+from search_tools import CourseOutlineTool, CourseSearchTool, ToolManager
 
 
 class TestCourseSearchTool:
@@ -24,9 +24,9 @@ class TestCourseSearchTool:
         tool = CourseSearchTool(test_vector_store)
         result = tool.execute(query="testing basics")
 
-        print(f"\n--- Basic Search Result ---")
+        print("\n--- Basic Search Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         # Should return formatted results
         assert isinstance(result, str)
@@ -40,9 +40,9 @@ class TestCourseSearchTool:
         tool = CourseSearchTool(test_vector_store)
         result = tool.execute(query="testing", course_name="Testing Fundamentals")
 
-        print(f"\n--- Search with Course Filter Result ---")
+        print("\n--- Search with Course Filter Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert isinstance(result, str)
         assert "Testing Fundamentals" in result
@@ -52,9 +52,9 @@ class TestCourseSearchTool:
         tool = CourseSearchTool(test_vector_store)
         result = tool.execute(query="testing", course_name="Testing")
 
-        print(f"\n--- Search with Partial Course Name Result ---")
+        print("\n--- Search with Partial Course Name Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert isinstance(result, str)
         # Should resolve "Testing" to "Testing Fundamentals"
@@ -63,15 +63,11 @@ class TestCourseSearchTool:
     def test_execute_with_lesson_filter(self, test_vector_store):
         """Test search with lesson number filter"""
         tool = CourseSearchTool(test_vector_store)
-        result = tool.execute(
-            query="testing",
-            course_name="Testing Fundamentals",
-            lesson_number=0
-        )
+        result = tool.execute(query="testing", course_name="Testing Fundamentals", lesson_number=0)
 
-        print(f"\n--- Search with Lesson Filter Result ---")
+        print("\n--- Search with Lesson Filter Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert isinstance(result, str)
         assert "Lesson 0" in result
@@ -81,9 +77,9 @@ class TestCourseSearchTool:
         tool = CourseSearchTool(test_vector_store)
         result = tool.execute(query="testing", course_name="Nonexistent Course")
 
-        print(f"\n--- Search Nonexistent Course Result ---")
+        print("\n--- Search Nonexistent Course Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert isinstance(result, str)
         assert "No course found" in result or "No relevant content found" in result
@@ -93,9 +89,9 @@ class TestCourseSearchTool:
         tool = CourseSearchTool(test_vector_store)
         result = tool.execute(query="quantum mechanics advanced physics")
 
-        print(f"\n--- Search No Results ---")
+        print("\n--- Search No Results ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert isinstance(result, str)
         # Should indicate no results found
@@ -104,10 +100,10 @@ class TestCourseSearchTool:
     def test_sources_tracking(self, test_vector_store):
         """Test that sources are properly tracked after search"""
         tool = CourseSearchTool(test_vector_store)
-        result = tool.execute(query="testing basics")
+        _result = tool.execute(query="testing basics")
 
         # Check that sources were stored
-        assert hasattr(tool, 'last_sources')
+        assert hasattr(tool, "last_sources")
         assert isinstance(tool.last_sources, list)
         assert len(tool.last_sources) > 0
 
@@ -137,9 +133,9 @@ class TestCourseOutlineTool:
         tool = CourseOutlineTool(test_vector_store)
         result = tool.execute(course_name="Testing Fundamentals")
 
-        print(f"\n--- Course Outline Result ---")
+        print("\n--- Course Outline Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert isinstance(result, str)
         assert "Testing Fundamentals" in result
@@ -155,9 +151,9 @@ class TestCourseOutlineTool:
         tool = CourseOutlineTool(test_vector_store)
         result = tool.execute(course_name="Testing")
 
-        print(f"\n--- Outline with Partial Name Result ---")
+        print("\n--- Outline with Partial Name Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert isinstance(result, str)
         assert "Testing Fundamentals" in result
@@ -167,9 +163,9 @@ class TestCourseOutlineTool:
         tool = CourseOutlineTool(test_vector_store)
         result = tool.execute(course_name="Nonexistent Course")
 
-        print(f"\n--- Outline Nonexistent Course Result ---")
+        print("\n--- Outline Nonexistent Course Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert isinstance(result, str)
         assert "No course found" in result
@@ -212,9 +208,9 @@ class TestToolManager:
 
         result = manager.execute_tool("search_course_content", query="testing basics")
 
-        print(f"\n--- Tool Manager Execute Result ---")
+        print("\n--- Tool Manager Execute Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert isinstance(result, str)
         assert len(result) > 0

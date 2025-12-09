@@ -1,17 +1,19 @@
 """Shared test fixtures for RAG chatbot tests"""
-import pytest
+
 import os
+import shutil
 import sys
 import tempfile
-import shutil
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock
+
+import pytest
 
 # Add parent directory to path to import backend modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import Course, Lesson, CourseChunk
-from vector_store import VectorStore
 from config import Config
+from models import Course, CourseChunk, Lesson
+from vector_store import VectorStore
 
 
 @pytest.fixture
@@ -30,25 +32,23 @@ def sample_course():
         Lesson(
             lesson_number=0,
             title="Introduction to Testing",
-            lesson_link="https://example.com/lesson-0"
+            lesson_link="https://example.com/lesson-0",
         ),
         Lesson(
             lesson_number=1,
             title="Advanced Testing Strategies",
-            lesson_link="https://example.com/lesson-1"
+            lesson_link="https://example.com/lesson-1",
         ),
         Lesson(
-            lesson_number=2,
-            title="Test Automation",
-            lesson_link="https://example.com/lesson-2"
-        )
+            lesson_number=2, title="Test Automation", lesson_link="https://example.com/lesson-2"
+        ),
     ]
 
     return Course(
         title="Testing Fundamentals",
         instructor="Dr. Test",
         course_link="https://example.com/course",
-        lessons=lessons
+        lessons=lessons,
     )
 
 
@@ -59,19 +59,21 @@ def sample_chunks(sample_course):
     lesson_contents = {
         0: "This is lesson 0 about testing basics. We cover unit tests and integration tests.",
         1: "This is lesson 1 about advanced testing. We cover mocking and fixtures.",
-        2: "This is lesson 2 about test automation. We cover CI/CD and automated testing pipelines."
+        2: "This is lesson 2 about test automation. We cover CI/CD and automated testing pipelines.",
     }
 
     chunks = []
     for lesson in sample_course.lessons:
         # Create chunks from lesson content
         lesson_content = lesson_contents.get(lesson.lesson_number, "Default content")
-        content = f"Course {sample_course.title} Lesson {lesson.lesson_number} content: {lesson_content}"
+        content = (
+            f"Course {sample_course.title} Lesson {lesson.lesson_number} content: {lesson_content}"
+        )
         chunk = CourseChunk(
             course_title=sample_course.title,
             lesson_number=lesson.lesson_number,
             chunk_index=lesson.lesson_number,  # Simple index for testing
-            content=content
+            content=content,
         )
         chunks.append(chunk)
     return chunks
@@ -81,9 +83,7 @@ def sample_chunks(sample_course):
 def test_vector_store(temp_chroma_path, sample_course, sample_chunks):
     """Create a VectorStore with test data"""
     store = VectorStore(
-        chroma_path=temp_chroma_path,
-        embedding_model="all-MiniLM-L6-v2",
-        max_results=5
+        chroma_path=temp_chroma_path, embedding_model="all-MiniLM-L6-v2", max_results=5
     )
 
     # Add course metadata
@@ -128,7 +128,9 @@ def mock_anthropic_client_with_tool_use():
 
     # Second response: final answer
     final_response = MagicMock()
-    final_response.content = [MagicMock(text="Here is the answer based on search results", type="text")]
+    final_response.content = [
+        MagicMock(text="Here is the answer based on search results", type="text")
+    ]
     final_response.stop_reason = "end_turn"
 
     # Configure mock to return different responses on subsequent calls

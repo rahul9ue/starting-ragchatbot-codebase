@@ -54,3 +54,24 @@ The application will be available at:
 - Web Interface: `http://localhost:8000`
 - API Documentation: `http://localhost:8000/docs`
 
+## Development
+
+### Code Quality
+
+This project uses automated code quality tools:
+
+- **Black**: Automatic code formatting
+- **Ruff**: Fast Python linter
+
+**Quick check before committing:**
+```bash
+./quality.sh
+```
+
+**Auto-format code:**
+```bash
+./format.sh
+```
+
+See [CLAUDE.md](CLAUDE.md#code-quality-tools) for detailed documentation.
+

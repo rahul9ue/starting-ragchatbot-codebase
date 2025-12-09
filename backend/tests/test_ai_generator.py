@@ -1,8 +1,10 @@
 """Tests for ai_generator.py - AIGenerator tool calling and response generation"""
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, call
 from ai_generator import AIGenerator
-from search_tools import ToolManager, CourseSearchTool
+from search_tools import CourseSearchTool, ToolManager
 
 
 class TestAIGeneratorBasic:
@@ -34,8 +36,7 @@ class TestAIGeneratorBasic:
 
         history = "User: Previous question\nAssistant: Previous answer"
         response = generator.generate_response(
-            query="What is testing?",
-            conversation_history=history
+            query="What is testing?", conversation_history=history
         )
 
         assert response == "Test response"
@@ -69,7 +70,7 @@ class TestAIGeneratorToolCalling:
         response = generator.generate_response(
             query="What is testing?",
             tools=tool_manager.get_tool_definitions(),
-            tool_manager=tool_manager
+            tool_manager=tool_manager,
         )
 
         assert isinstance(response, str)
@@ -117,12 +118,12 @@ class TestAIGeneratorToolCalling:
         response = generator.generate_response(
             query="What is testing?",
             tools=tool_manager.get_tool_definitions(),
-            tool_manager=tool_manager
+            tool_manager=tool_manager,
         )
 
-        print(f"\n--- Tool Execution Flow Response ---")
+        print("\n--- Tool Execution Flow Response ---")
         print(response)
-        print(f"--- End Response ---\n")
+        print("--- End Response ---\n")
 
         assert response == "Final answer about testing"
         assert mock_client.messages.create.call_count == 2
@@ -157,15 +158,15 @@ class TestAIGeneratorToolCalling:
         # Base params
         base_params = {
             "messages": [{"role": "user", "content": "What is testing?"}],
-            "system": AIGenerator.SYSTEM_PROMPT
+            "system": AIGenerator.SYSTEM_PROMPT,
         }
 
         # Execute
         result = generator._handle_tool_execution(initial_response, base_params, tool_manager)
 
-        print(f"\n--- Handle Tool Execution Result ---")
+        print("\n--- Handle Tool Execution Result ---")
         print(result)
-        print(f"--- End Result ---\n")
+        print("--- End Result ---\n")
 
         assert result == "Final answer"
         assert mock_client.messages.create.called
@@ -201,7 +202,9 @@ class TestAIGeneratorToolCalling:
 
         # Round 3: Final synthesis (no tools)
         final_response = MagicMock()
-        final_response.content = [MagicMock(text="Final answer combining both searches", type="text")]
+        final_response.content = [
+            MagicMock(text="Final answer combining both searches", type="text")
+        ]
         final_response.stop_reason = "end_turn"
 
         mock_client.messages.create.side_effect = [round1_response, round2_response, final_response]
@@ -216,12 +219,12 @@ class TestAIGeneratorToolCalling:
         response = generator.generate_response(
             query="What does the Testing course teach about unit tests?",
             tools=tool_manager.get_tool_definitions(),
-            tool_manager=tool_manager
+            tool_manager=tool_manager,
         )
 
-        print(f"\n--- Multi-Round Tool Execution Response ---")
+        print("\n--- Multi-Round Tool Execution Response ---")
         print(response)
-        print(f"--- End Response ---\n")
+        print("--- End Response ---\n")
 
         # Verify: 3 API calls (2 tool rounds + 1 final synthesis)
         assert mock_client.messages.create.call_count == 3
@@ -262,12 +265,12 @@ class TestAIGeneratorToolCalling:
         response = generator.generate_response(
             query="What is testing?",
             tools=tool_manager.get_tool_definitions(),
-            tool_manager=tool_manager
+            tool_manager=tool_manager,
         )
 
-        print(f"\n--- Early Termination Response ---")
+        print("\n--- Early Termination Response ---")
         print(response)
-        print(f"--- End Response ---\n")
+        print("--- End Response ---\n")
 
         # Verify: Only 2 API calls (1 tool + 1 final), not 3
         assert mock_client.messages.create.call_count == 2
@@ -309,12 +312,12 @@ class TestAIGeneratorToolCalling:
             query="What is testing?",
             tools=tool_manager.get_tool_definitions(),
             tool_manager=tool_manager,
-            max_tool_rounds=2
+            max_tool_rounds=2,
         )
 
-        print(f"\n--- Max Rounds Enforcement Response ---")
+        print("\n--- Max Rounds Enforcement Response ---")
         print(response)
-        print(f"--- End Response ---\n")
+        print("--- End Response ---\n")
 
         # Verify: 3 API calls (2 tool rounds + 1 forced final without tools)
         assert mock_client.messages.create.call_count == 3
@@ -354,12 +357,12 @@ class TestAIGeneratorToolCalling:
         response = generator.generate_response(
             query="What is testing?",
             tools=[{"name": "search_course_content"}],
-            tool_manager=error_tool_manager
+            tool_manager=error_tool_manager,
         )
 
-        print(f"\n--- Tool Error Response ---")
+        print("\n--- Tool Error Response ---")
         print(response)
-        print(f"--- End Response ---\n")
+        print("--- End Response ---\n")
 
         # Verify: Error message returned
         assert "error" in response.lower()
@@ -376,17 +379,14 @@ class TestAIGeneratorIntegration:
             pytest.skip("Real API key required")
 
         generator = AIGenerator(
-            api_key=test_config.ANTHROPIC_API_KEY,
-            model="claude-sonnet-4-20250514"
+            api_key=test_config.ANTHROPIC_API_KEY, model="claude-sonnet-4-20250514"
         )
 
-        response = generator.generate_response(
-            query="What is 2+2? Answer with just the number."
-        )
+        response = generator.generate_response(query="What is 2+2? Answer with just the number.")
 
-        print(f"\n--- Real API Response ---")
+        print("\n--- Real API Response ---")
         print(response)
-        print(f"--- End Response ---\n")
+        print("--- End Response ---\n")
 
         assert isinstance(response, str)
         assert len(response) > 0
@@ -399,8 +399,7 @@ class TestAIGeneratorIntegration:
             pytest.skip("Real API key required")
 
         generator = AIGenerator(
-            api_key=test_config.ANTHROPIC_API_KEY,
-            model="claude-sonnet-4-20250514"
+            api_key=test_config.ANTHROPIC_API_KEY, model="claude-sonnet-4-20250514"
         )
 
         # Setup tool manager
@@ -411,12 +410,12 @@ class TestAIGeneratorIntegration:
         response = generator.generate_response(
             query="What does the Testing Fundamentals course teach about unit tests?",
             tools=tool_manager.get_tool_definitions(),
-            tool_manager=tool_manager
+            tool_manager=tool_manager,
         )
 
-        print(f"\n--- Real API with Tools Response ---")
+        print("\n--- Real API with Tools Response ---")
         print(response)
-        print(f"--- End Response ---\n")
+        print("--- End Response ---\n")
 
         assert isinstance(response, str)
         assert len(response) > 0
@@ -428,7 +427,7 @@ def pytest_addoption(parser):
         "--run-integration",
         action="store_true",
         default=False,
-        help="Run integration tests with real API"
+        help="Run integration tests with real API",
     )
 
 

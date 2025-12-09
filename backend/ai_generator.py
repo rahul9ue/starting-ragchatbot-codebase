@@ -1,5 +1,7 @@
+from typing import Any
+
 import anthropic
-from typing import List, Optional, Dict, Any
+
 
 class AIGenerator:
     """Handles interactions with Anthropic's Claude API for generating responses"""
@@ -38,23 +40,22 @@ All responses must be:
 4. **Example-supported** - Include relevant examples when they aid understanding
 Provide only the direct answer to what was asked.
 """
-    
+
     def __init__(self, api_key: str, model: str):
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
-        
+
         # Pre-build base API parameters
-        self.base_params = {
-            "model": self.model,
-            "temperature": 0,
-            "max_tokens": 800
-        }
-    
-    def generate_response(self, query: str,
-                         conversation_history: Optional[str] = None,
-                         tools: Optional[List] = None,
-                         tool_manager=None,
-                         max_tool_rounds: Optional[int] = None) -> str:
+        self.base_params = {"model": self.model, "temperature": 0, "max_tokens": 800}
+
+    def generate_response(
+        self,
+        query: str,
+        conversation_history: str | None = None,
+        tools: list | None = None,
+        tool_manager=None,
+        max_tool_rounds: int | None = None,
+    ) -> str:
         """
         Generate AI response with multi-round tool usage support.
 
@@ -78,25 +79,23 @@ Provide only the direct answer to what was asked.
 
         # Execute tool loop if tools are available
         if tools and tool_manager:
-            return self._execute_tool_loop(messages, system_content, tools, tool_manager, max_rounds)
+            return self._execute_tool_loop(
+                messages, system_content, tools, tool_manager, max_rounds
+            )
         else:
             # No tools available - direct response
             response = self._make_api_call(messages, system_content, tools=None)
             return self._extract_text_response(response)
 
-    def _build_system_prompt(self, conversation_history: Optional[str]) -> str:
+    def _build_system_prompt(self, conversation_history: str | None) -> str:
         """Build system prompt with conversation history if available."""
         if conversation_history:
             return f"{self.SYSTEM_PROMPT}\n\nPrevious conversation:\n{conversation_history}"
         return self.SYSTEM_PROMPT
 
-    def _make_api_call(self, messages: List, system_content: str, tools: Optional[List]):
+    def _make_api_call(self, messages: list, system_content: str, tools: list | None):
         """Make API call to Claude with consistent parameters."""
-        api_params = {
-            **self.base_params,
-            "messages": messages,
-            "system": system_content
-        }
+        api_params = {**self.base_params, "messages": messages, "system": system_content}
 
         if tools:
             api_params["tools"] = tools
@@ -104,8 +103,9 @@ Provide only the direct answer to what was asked.
 
         return self.client.messages.create(**api_params)
 
-    def _execute_tool_loop(self, messages: List, system_content: str,
-                          tools: List, tool_manager, max_rounds: int) -> str:
+    def _execute_tool_loop(
+        self, messages: list, system_content: str, tools: list, tool_manager, max_rounds: int
+    ) -> str:
         """
         Execute the multi-round tool calling loop.
 
@@ -153,7 +153,7 @@ Provide only the direct answer to what was asked.
         final_response = self._make_api_call(messages, system_content, tools=None)
         return self._extract_text_response(final_response)
 
-    def _execute_all_tools(self, response, tool_manager) -> Dict:
+    def _execute_all_tools(self, response, tool_manager) -> dict:
         """
         Execute all tool calls in response and return structured results.
 
@@ -168,27 +168,22 @@ Provide only the direct answer to what was asked.
             if content_block.type == "tool_use":
                 try:
                     tool_output = tool_manager.execute_tool(
-                        content_block.name,
-                        **content_block.input
+                        content_block.name, **content_block.input
                     )
 
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content_block.id,
-                        "content": tool_output
-                    })
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": content_block.id,
+                            "content": tool_output,
+                        }
+                    )
 
                 except Exception as e:
                     error_msg = f"Tool {content_block.name} failed: {str(e)}"
-                    return {
-                        "results": [],
-                        "error": error_msg
-                    }
+                    return {"results": [], "error": error_msg}
 
-        return {
-            "results": tool_results,
-            "error": None
-        }
+        return {"results": tool_results, "error": None}
 
     def _extract_text_response(self, response) -> str:
         """Extract text from Claude response, handling various content structures."""
@@ -197,7 +192,7 @@ Provide only the direct answer to what was asked.
 
         text_parts = []
         for block in response.content:
-            if hasattr(block, 'text'):
+            if hasattr(block, "text"):
                 text_parts.append(block.text)
 
         return " ".join(text_parts) if text_parts else "No response generated."
@@ -206,49 +201,40 @@ Provide only the direct answer to what was asked.
         """Format tool error for user display."""
         return f"I encountered an error while searching the course materials: {error}"
 
-    def _handle_tool_execution(self, initial_response, base_params: Dict[str, Any], tool_manager):
+    def _handle_tool_execution(self, initial_response, base_params: dict[str, Any], tool_manager):
         """
         Handle execution of tool calls and get follow-up response.
-        
+
         Args:
             initial_response: The response containing tool use requests
             base_params: Base API parameters
             tool_manager: Manager to execute tools
-            
+
         Returns:
             Final response text after tool execution
         """
         # Start with existing messages
         messages = base_params["messages"].copy()
-        
+
         # Add AI's tool use response
         messages.append({"role": "assistant", "content": initial_response.content})
-        
+
         # Execute all tool calls and collect results
         tool_results = []
         for content_block in initial_response.content:
             if content_block.type == "tool_use":
-                tool_result = tool_manager.execute_tool(
-                    content_block.name, 
-                    **content_block.input
+                tool_result = tool_manager.execute_tool(content_block.name, **content_block.input)
+
+                tool_results.append(
+                    {"type": "tool_result", "tool_use_id": content_block.id, "content": tool_result}
                 )
-                
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": content_block.id,
-                    "content": tool_result
-                })
-        
+
         # Add tool results as single message
         if tool_results:
             messages.append({"role": "user", "content": tool_results})
-        
+
         # Prepare final API call without tools
-        final_params = {
-            **self.base_params,
-            "messages": messages,
-            "system": base_params["system"]
-        }
+        final_params = {**self.base_params, "messages": messages, "system": base_params["system"]}
 
         # Get final response
         final_response = self.client.messages.create(**final_params)
@@ -260,7 +246,7 @@ Provide only the direct answer to what was asked.
         # Extract text from content blocks
         text_parts = []
         for block in final_response.content:
-            if hasattr(block, 'text'):
+            if hasattr(block, "text"):
                 text_parts.append(block.text)
 
         return " ".join(text_parts) if text_parts else "No response generated."

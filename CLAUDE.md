@@ -312,3 +312,75 @@ Replace `SessionManager` in-memory dict with:
 - Database storage (SQLite, PostgreSQL)
 - Redis for distributed deployments
 - Update `get_conversation_history()` and `add_exchange()` methods
+
+## Code Quality Tools
+
+This project uses automated code quality tools to maintain consistent formatting and catch common issues.
+
+### Installed Tools
+
+**Black** - Opinionated code formatter
+- Line length: 100 characters
+- Target: Python 3.13
+- Config: `[tool.black]` in `pyproject.toml`
+
+**Ruff** - Fast Python linter
+- Checks: pycodestyle (E/W), pyflakes (F), isort (I), bugbear (B), comprehensions (C4), pyupgrade (UP)
+- Auto-fixes many issues
+- Config: `[tool.ruff]` in `pyproject.toml`
+
+### Running Quality Checks
+
+**Quick check (recommended before committing):**
+```bash
+./quality.sh
+```
+
+This runs:
+- Black format check (no modifications)
+- Ruff linting
+
+**With tests:**
+```bash
+./quality.sh --with-tests
+```
+
+**Auto-format code:**
+```bash
+./format.sh
+```
+
+This runs:
+- Black formatter (modifies files)
+- Ruff auto-fixes
+
+**Manual commands:**
+```bash
+# Format code
+uv run black backend/
+
+# Check formatting without changes
+uv run black --check backend/
+
+# Run linter
+uv run ruff check backend/
+
+# Run linter with auto-fix
+uv run ruff check backend/ --fix
+```
+
+### Pre-Commit Workflow
+
+1. Make your code changes
+2. Run `./format.sh` to auto-format
+3. Run `./quality.sh` to verify all checks pass
+4. Commit your changes
+
+### Configuration Details
+
+All quality tool settings are in `pyproject.toml`:
+
+- Line length: 100 (both Black and Ruff)
+- Excluded directories: `.venv`, `build`, `dist`, `chroma_db`
+- Import sorting: `backend` is treated as first-party package
+- Special rules: E402 (imports not at top) ignored for `app.py` due to warnings filter
