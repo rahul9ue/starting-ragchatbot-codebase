@@ -4,7 +4,7 @@ import os
 import shutil
 import sys
 import tempfile
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -12,7 +12,9 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import Config
-from models import Course, CourseChunk, Lesson
+from models import Course, CourseChunk, Lesson, Source
+from rag_system import RAGSystem
+from session_manager import SessionManager
 from vector_store import VectorStore
 
 
@@ -145,3 +147,131 @@ def test_config():
     config = Config()
     config.ANTHROPIC_API_KEY = "test-api-key"
     return config
+
+
+@pytest.fixture
+def mock_rag_system():
+    """Create a mock RAGSystem for API testing"""
+    mock_rag = MagicMock(spec=RAGSystem)
+
+    # Mock query method to return predefined response
+    mock_rag.query.return_value = (
+        "This is a test response",
+        [
+            Source(
+                text="Test Course - Lesson 1: Sample source content",
+                link="https://example.com/lesson-1"
+            )
+        ]
+    )
+
+    # Mock get_course_analytics
+    mock_rag.get_course_analytics.return_value = {
+        "total_courses": 2,
+        "course_titles": ["Course A", "Course B"]
+    }
+
+    # Mock session manager
+    mock_rag.session_manager = MagicMock(spec=SessionManager)
+    mock_rag.session_manager.create_session.return_value = "test_session_123"
+
+    return mock_rag
+
+
+@pytest.fixture
+def test_app(mock_rag_system):
+    """Create a test FastAPI app without static file mounting"""
+    from fastapi import FastAPI, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
+    from pydantic import BaseModel
+    from typing import List, Optional
+
+    # Create app without static file mounting
+    app = FastAPI(title="Course Materials RAG System - Test")
+
+    # Enable CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Pydantic models
+    class QueryRequest(BaseModel):
+        query: str
+        session_id: Optional[str] = None
+
+    class QueryResponse(BaseModel):
+        answer: str
+        sources: List[Source]
+        session_id: str
+
+    class CourseStats(BaseModel):
+        total_courses: int
+        course_titles: List[str]
+
+    # API Endpoints (inline to avoid import issues)
+    @app.post("/api/query", response_model=QueryResponse)
+    async def query_documents(request: QueryRequest):
+        """Process a query and return response with sources"""
+        try:
+            session_id = request.session_id
+            if not session_id:
+                session_id = mock_rag_system.session_manager.create_session()
+
+            answer, sources = mock_rag_system.query(request.query, session_id)
+
+            return QueryResponse(
+                answer=answer,
+                sources=sources,
+                session_id=session_id
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/courses", response_model=CourseStats)
+    async def get_course_stats():
+        """Get course analytics and statistics"""
+        try:
+            analytics = mock_rag_system.get_course_analytics()
+            return CourseStats(
+                total_courses=analytics["total_courses"],
+                course_titles=analytics["course_titles"]
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return app
+
+
+@pytest.fixture
+def test_client(test_app):
+    """Create a TestClient for API testing"""
+    from fastapi.testclient import TestClient
+    return TestClient(test_app)
+
+
+@pytest.fixture
+def sample_query_request():
+    """Create a sample query request for testing"""
+    return {
+        "query": "What is testing?",
+        "session_id": "test_session_1"
+    }
+
+
+@pytest.fixture
+def sample_sources():
+    """Create sample sources for testing"""
+    return [
+        Source(
+            text="Testing Fundamentals - Lesson 1: Testing is important for software quality.",
+            link="https://example.com/lesson-1"
+        ),
+        Source(
+            text="Testing Fundamentals - Lesson 2: Unit tests verify individual components.",
+            link="https://example.com/lesson-2"
+        )
+    ]
